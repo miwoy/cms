@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <link rel="stylesheet" href="/sdk/sdk.css" />
+    <style>
+        html,
+        body,
+        .app-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<!-- 这个一定要记得加，否则导航部分没样式 -->
+
+<body>
+    <div id="root" class="app-wrapper"></div>
+    <script src="/sdk/sdk.js"></script>
+    <script>
+        (function () {
+            window.a = {}
+            a.amis = amisRequire('amis/embed');
+            a.amisLib = amisRequire('amis');
+            a.React = amisRequire('react');
+
+            // 自定义组件，props 中可以拿到配置中的所有参数，比如 props.label 是 'Name'
+            function CustomComponent(props) {
+                let dom = a.React.useRef("text");
+                console.log(dom)
+                a.React.useEffect(function () {
+                    // 从这里开始写自定义代码，dom.current 就是新创建的 dom 节点
+                    // 可以基于这个 dom 节点对接任意 JavaScript 框架，比如 jQuery/Vue 等
+                    dom.current.innerHTML = 'custom';
+                    // 而 props 中能拿到这个
+                });
+                return a.React.createElement('div', {
+                    ref: dom
+                });
+            }
+
+            //注册自定义组件，请参考后续对工作原理的介绍
+            a.amisLib.Renderer({
+                test: /(^|\/)my-custom/
+            })(CustomComponent);
+
+            let amisScoped = a.amis.embed('#root', {
+                type: 'page',
+                title: '表单页面',
+                body: {
+                    type: 'form',
+                    mode: 'horizontal',
+                    api: '/saveForm',
+                    controls: [{
+                        label: 'Name',
+                        type: 'my-custom', // 注意这个的 type 对应之前注册的 test
+                        name: 'custom'
+                    }]
+                }
+            });
+        })()
+    </script>
+</body>
+
+</html>

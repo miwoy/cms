@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <link rel="stylesheet" href="/sdk/sdk.css" />
+    <style>
+        html,
+        body,
+        .app-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<!-- 这个一定要记得加，否则导航部分没样式 -->
+
+<body>
+    <div id="root" class="app-wrapper"></div>
+    <script src="/sdk/sdk.js"></script>
+    <script>
+        (function () {
+            let amis = amisRequire("amis/embed");
+            let amisLib = amisRequire('amis');
+            amisLib.registerFilter('find', function (input, source) {
+                try {
+                    source = JSON.parse(unescape(source))
+                    let obj = source.find(obj=>obj.value==input)
+                    return obj && obj.label
+                } catch (e) {
+                    console.error(e)
+                    return input
+                }
+                
+                
+            });
+            const app = {
+                "definitions": {
+                    "menu": {
+                        "type": "combo",
+                        "multiple": true,
+                        "multiLine": true,
+                        "name": "pages",
+                        "controls": [{
+                                "type": "group",
+                                "direction": "vertical",
+                                "controls": [{
+                                        "label": "Label",
+                                        "name": "label",
+                                        "type": "text",
+                                        "required": true
+                                    },
+                                    {
+                                        "label": "URL",
+                                        "name": "url",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "label": "Icon",
+                                        "name": "icon",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "label": "Redirect",
+                                        "name": "redirect",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "label": "SchemaApi",
+                                        "name": "schemaApi",
+                                        "visibleOn": "!(this.hasOwnProperty('useSchema') && this.useSchema)",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "label": "Schema",
+                                        "name": "schema",
+                                        "type": "editor",
+                                        "visibleOn": "this.hasOwnProperty('useSchema') && this.useSchema",
+                                        "language": "json",
+                                        "clearValueOnHidden": true
+                                    }
+                                ]
+                            },
+                            {
+                                "label": "配置Schema",
+                                "type": "switch",
+                                "name": "useSchema",
+                                "mode": "inline",
+                                "className": "block"
+                            },
+                            {
+                                "label": "包含子菜单",
+                                "type": "switch",
+                                "name": "hasChildren",
+                                "mode": "inline",
+                                "className": "block"
+                            },
+                            {
+                                "$ref": "menu",
+                                "label": "子菜单",
+                                "name": "children",
+                                "visibleOn": "this.hasOwnProperty('hasChildren') && this.hasChildren",
+                                "addButtonText": "新增子菜单",
+                                "clearValueOnHidden": true
+                            }
+                        ]
+                    }
+                },
+                "type": "app",
+                "name": "app",
+                "data": {
+                    "refresh": 0
+                },
+                "brandName": "CMS 信息管理系统",
+                "logo": "",
+                "api": "/admin/pages",
+                "pages": []
+            };
+
+            function normalizeLink(to, location = window.location) {
+                to = to || "";
+
+                if (to && to[0] === "#") {
+                    to = location.pathname + location.search + to;
+                } else if (to && to[0] === "?") {
+                    to = location.pathname + to;
+                }
+
+                const idx = to.indexOf("?");
+                const idx2 = to.indexOf("#");
+                let pathname = ~idx ?
+                    to.substring(0, idx) :
+                    ~idx2 ?
+                    to.substring(0, idx2) :
+                    to;
+                let search = ~idx ? to.substring(idx, ~idx2 ? idx2 : undefined) : "";
+                let hash = ~idx2 ? to.substring(idx2) : location.hash;
+
+                if (!pathname) {
+                    pathname = location.pathname;
+                } else if (pathname[0] != "/" && !/^https?\:\/\//.test(pathname)) {
+                    let relativeBase = location.pathname;
+                    const paths = relativeBase.split("/");
+                    paths.pop();
+                    let m;
+                    while ((m = /^\.\.?\//.exec(pathname))) {
+                        if (m[0] === "../") {
+                            paths.pop();
+                        }
+                        pathname = pathname.substring(m[0].length);
+                    }
+                    pathname = paths.concat(pathname).join("/");
+                }
+
+                return pathname + search + hash;
+            }
+            const match = amisRequire("path-to-regexp").match;
+
+            let amisScoped = amis.embed(
+                "#root",
+                app, {}, {
+                    watchRouteChange: (fn) => {
+                        window.addEventListener("hashchange", fn);
+                        return () => {
+                            window.removeEventListener("hashchange", fn);
+                        };
+                    },
+                    jumpTo: (to) => {
+                        if (to.slice(0, 4) == "http") {
+                            location.href = to;
+                        } else {
+                            location.hash = to;
+                        }
+
+                    },
+                    isCurrentUrl: (to, ctx) => {
+                        if (!to) {
+                            return false;
+                        }
+
+                        const pathname = location.hash ? location.hash.substring(1) : "/";
+                        const link = normalizeLink(to, {
+                            ...location,
+                            pathname,
+                            hash: "",
+                        });
+
+                        if (!~link.indexOf("http") && ~link.indexOf(":")) {
+                            let strict = ctx && ctx.strict;
+                            return match(link, {
+                                decode: decodeURIComponent,
+                                strict: typeof strict !== "undefined" ? strict : true,
+                            })(pathname);
+                        }
+
+                        return pathname === link;
+                    },
+                }
+            );
+        })();
+    </script>
+</body>
+
+</html>
