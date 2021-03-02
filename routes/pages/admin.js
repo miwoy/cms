@@ -38,7 +38,9 @@ router.get("/pages", async (ctx) => {
     })
 
     let sites = await mongo.run("cms", async (db) => {
-        return await db.collection("site").find().sort({
+        return await db.collection("site").find({
+            hidden: false
+        }).sort({
             sequence: 1
         }).toArray()
     })
@@ -53,7 +55,7 @@ router.get("/pages", async (ctx) => {
 })
 
 /**
- * 获取站点页面配置
+ * 获取站点管理页面
  */
 router.get("/pages/site", async (ctx) => {
     let siteSchema = require("data/siteSchema")[0]
@@ -62,7 +64,7 @@ router.get("/pages/site", async (ctx) => {
 })
 
 /**
- * 获取站点页面配置
+ * 获取某站点下页面配置菜单管理页面
  */
 router.get("/pages/site/:id/page", async (ctx)=> {
     let pageSchema = require("data/pageSchema")[0]

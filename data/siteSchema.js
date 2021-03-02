@@ -40,6 +40,20 @@ module.exports = [{
             "name": "icon",
             "type": "text",
             "mode": "horizontal"
+        },
+        "hidden": {
+            "label": "是否隐藏",
+            "name": "hidden",
+            "type": "switch",
+            "value": false,
+            "mode": "horizontal"
+        },
+        "enabled": {
+            "label": "是否启用",
+            "name": "enabled",
+            "type": "switch",
+            "value": false,
+            "mode": "horizontal"
         }
     }
 }]

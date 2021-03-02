@@ -34,7 +34,8 @@ fs
 router.get("/", async (ctx) => {
     let site =  await mongo.run("cms", async(db)=>{
         return await db.collection("site").findOne({
-            path: "/"
+            path: "/",
+            enabled: true
         })
     })
     if(!site) throw new IsNullDataGeneralityError("未匹配到相关站点")
@@ -45,17 +46,22 @@ router.get("/", async (ctx) => {
 router.get("/:path", async (ctx) => {
     let site =  await mongo.run("cms", async(db)=>{
         return await db.collection("site").findOne({
-            path: path.join("/", ctx.params.path)
+            path: path.join("/", ctx.params.path),
+            enabled: true
         })
     })
     if(!site) throw new IsNullDataGeneralityError("未匹配到相关站点")
     await ctx.render("index", site)
 });
 
+/**
+ * 菜单配置，为了可以动态刷新
+ */
 router.get("/pages/:siteId", async (ctx)=> {
     let site =  await mongo.run("cms", async(db)=>{
         return await db.collection("site").findOne({
-            _id: objectId(ctx.params.siteId)
+            _id: objectId(ctx.params.siteId),
+            enabled: true
         })
     })
     ctx.sbody = site.menu
