@@ -1,4 +1,71 @@
 let properties = [{
+    "name": "static",
+    "label": "静态框",
+    "icon": "fa fa-text-width",
+    "avatar": "/icon/text.png",
+    "properties": {
+        "_ref": {
+            "type": "text",
+            "label": "所属属性",
+            "name": "_ref",
+            "hidden": true,
+            "value": "static"
+        },
+        "type": {
+            "type": "text",
+            "label": "表单类型",
+            "name": "type",
+            "hidden": true,
+            "value": "tpl"
+        },
+        "label": {
+            "placeholder": "展示名称，如文章标题",
+            "type": "text",
+            "label": "展示名",
+            "name": "label",
+            "mode": "horizontal",
+            "required": true,
+            "validations": {
+                "minLength": 0,
+                "maxLength": 32
+            }
+        },
+        "name": {
+            "placeholder": "数据键，如title",
+            "type": "text",
+            "label": "数据键",
+            "name": "name",
+            "mode": "horizontal",
+            "required": true,
+            "validations": {
+                "minLength": 0,
+                "maxLength": 32
+            }
+        },
+        "tpl": {
+            "type": "text",
+            "label": "表达式",
+            "name": "tpl",
+            "required": true
+        },
+        "sortable": {
+            "type": "switch",
+            "label": "是否设置为排序字段",
+            "name": "sortable",
+            "mode": "horizontal",
+            "value": false,
+            "option": "设置此字段排序功能"
+        },
+        "hidden": {
+            "type": "switch",
+            "label": "是否隐藏",
+            "name": "hidden",
+            "mode": "horizontal",
+            "value": false,
+            "option": "配置隐藏静态字段"
+        }
+    }
+}, {
     "name": "text",
     "label": "文本框",
     "icon": "fa fa-font",
@@ -677,11 +744,26 @@ let properties = [{
         },
         "source": {
             "placeholder": "数据源",
-            "type": "text",
+            "type": "combo",
             "label": "数据源",
             "description": "API或者数据映射",
             "name": "source",
-            "mode": "horizontal"
+            "multiLine": true,
+            "controls": [{
+                "type": "text",
+                "name": "method",
+                "value": "get",
+                "hidden": true
+            }, {
+                "type": "text",
+                "name": "url",
+                "label": "地址",
+                "required": true
+            }, {
+                "type": "text",
+                "name": "sendOn",
+                "label": "发送条件"
+            }]
         },
         "value": {
             "placeholder": "默认值",
@@ -699,6 +781,18 @@ let properties = [{
             "name": "delimeter",
             "mode": "horizontal",
             "visibleOn": "this.joinValues"
+        },
+        "labelField": {
+            "type": "text",
+            "label": "绑定label字段",
+            "name": "labelField",
+            "placeholder": "默认label"
+        },
+        "valueField": {
+            "type": "text",
+            "label": "绑定value字段",
+            "name": "valueField",
+            "placeholder": "默认value"
         },
         "multiple": {
             "type": "switch",
@@ -935,6 +1029,13 @@ let properties = [{
             "mode": "horizontal",
             "required": true
         },
+        "description": {
+            "placeholder": "描述信息，会展示在表单的说明信息中",
+            "type": "textarea",
+            "label": "描述",
+            "name": "description",
+            "mode": "horizontal"
+        },
         "accept": {
             "placeholder": "限制类型(.csv,.png,.jpg)等。",
             "type": "text",
@@ -1035,6 +1136,13 @@ let properties = [{
             "name": "name",
             "mode": "horizontal",
             "required": true
+        },
+        "description": {
+            "placeholder": "描述信息，会展示在表单的说明信息中",
+            "type": "textarea",
+            "label": "描述",
+            "name": "description",
+            "mode": "horizontal"
         },
         "accept": {
             "placeholder": "限制类型(.png,.jpg)等。",
@@ -1722,6 +1830,7 @@ let properties = [{
             "type": "editor",
             "language": "json",
             "label": "表单结构",
+            "description": "不要使用dot命名name属性",
             "name": "_schema",
             "required": true,
             "options": {}
@@ -1730,170 +1839,19 @@ let properties = [{
 }]
 
 /**
-{
-    "name": "form",
-    "label": "内嵌",
-    "icon": "fa fa-snapchat",
-    "properties": {
-        type: {
-            "type": "text",
-            "label": "表单类型",
-            "name": "type",
-            "hidden": true,
-            "value": "editor"
-        },
-        label: {
-            "placeholder": "展示名称",
-            "type": "text",
-            "label": "展示名",
-            "name": "label",
-            "mode": "horizontal",
-            "required": true,
-            "validations": {
-                minLength: 0,
-                maxLength: 32
-            }
-        },
-        name: {
-            "placeholder": "数据键",
-            "type": "text",
-            "label": "数据键",
-            "name": "name",
-            "mode": "horizontal",
-            "required": true,
-            "validations": {
-                minLength: 0,
-                maxLength: 32
-            }
-        },
-        description: {
-            "placeholder": "描述信息，会展示在表单的说明信息中",
-            "type": "textarea",
-            "label": "描述",
-            "name": "description",
-            "mode": "horizontal",
-            "validations": {
-                minLength: 0,
-                maxLength: 1024
-            }
-        },
-        form: {
-            "name": "form",
-            "type": "button",
-            "label": "表单配置",
-            "mode": "horizontal",
-            "dialog": {
-                "title": "表单配置",
-                "body": {
-                    "type": "hbox",
-                    "columns": [{
-                        "type": "panel",
-                        "title": "字段列表",
-                        "className": "no-border m-r-lg",
-                        "body": {
-                            "type": "service",
-                            "name": "properties",
-                            "source": "${form}",
-                            "body": {
-                                "type": "cards",
-                                "itemClassName": "col-md-7",
-                                "placeholder": "暂无数据",
-                                "card": {
-                                    "header": {
-                                        "title": "$label",
-                                        "subTitle": "#$type",
-                                        "description": "$description",
-                                        "avatarClassName": "pull-left thumb-md avatar b-3x m-r",
-                                        "avatarText": "Icon"
-                                    },
-                                    "actions": [{
-                                        "type": "button",
-                                        "level": "link",
-                                        "label": "编辑",
-                                        "actionType": "dialog",
-                                        "reload": "properties",
-                                        "dialog": {
-                                            "title": "编辑",
-                                            "size": "lg",
-                                            "body": {
-                                                "type": "form",
-                                                "debug": conf.debug,
-                                                "api": `put:/api/collection/${collection._id}/property/$name`,
-                                                "controls": [{
-                                                    "type": "service",
-                                                    "schemaApi": "get:/api/property/$type?type=amis"
-                                                }]
-                                            }
-                                        }
-                                    }, {
-                                        "type": "button",
-                                        "label": "删除",
-                                        "actionType": "ajax",
-                                        "confirmText": "您确认要删除?",
-                                        "reload": "properties",
-                                        "api": `delete:/api/collection/${collection._id}/property/$name`
-                                    }],
-                                    "visibleOn": "!this.hidden",
-                                }
-                            }
-
-                        }
-                    }, {
-                        "type": "panel",
-                        "title": "属性类型",
-                        "className": "no-border m-r-lg",
-                        "columnClassName": "w-md",
-                        "body": {
-                            "type": "button-group",
-                            "vertical": true,
-                            "buttons": properties.map(prop => {
-                                return {
-                                    "type": "button",
-                                    "label": prop.label,
-                                    "size": "lg",
-                                    "level": "light",
-                                    "icon": prop.icon,
-                                    "iconClassName": "pull-left",
-                                    "className": "m-b no-border",
-                                    "actionType": "dialog",
-                                    "reload": "properties",
-                                    "dialog": {
-                                        "title": "新增属性",
-                                        "size": "lg",
-                                        "body": {
-                                            "type": "form",
-                                            "debug": conf.debug,
-                                            "api": `post:/api/collection/${collection._id}/property`,
-                                            "controls": _.values(prop.properties)
-                                        }
-                                    }
-                                }
-                            })
-                        }
-                    }]
-                }
-            }
-        },
-        multiple: {
-            "name": "multiple",
-            "type": "switch",
-            "label": "多选模式",
-            "mode": "horizontal",
-            "value": false,
-            "option": "是否为一对多关系"
-        },
-        required: {
-            "type": "switch",
-            "label": "是否必须",
-            "name": "required",
-            "mode": "horizontal",
-            "value": false,
-            "option": "在创建内容时，此此段是必需要填写的"
-        }
+ * 公共部分
+ */
+properties = properties.map(prop => {
+    prop.properties.system = {
+        "type": "switch",
+        "name": "system",
+        "label": "是否为系统字段",
+        "value": false,
+        "mode": "horizontal",
     }
-}
-*/
 
+    return prop
+})
 
 /**
  * 1. 文本框 text

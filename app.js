@@ -13,6 +13,7 @@ const logger = require("koa-logger4miwoy");
 const middleware = require("./lib/middleware");
 const Debug = require("debug");
 const debug = Debug("cobweb");
+const auth = require('koa-basic-auth');
 const app = new Koa();
 const router = require("./routes");
 
@@ -29,6 +30,10 @@ app.use(bodyparser({
 	urlencoded: true
  })); // 格式化body
 app.use(logger()); // 日志打印
+app.use(auth({
+	name: conf.name,
+	pass: conf.secret
+}));
 app.use(middleware.exceptionHandler);
 app.use(middleware.cors); // 设置跨域访问
 app.use(middleware.returnObject);

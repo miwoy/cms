@@ -77,7 +77,7 @@ module.exports = (collectionSchema, sites) => {
                     "url": "pages",
                     "schemaApi": `get:/admin/pages/site/${site._id}/page`
                 }, {
-                    "label": "内容模型",
+                    "label": "模型",
                     "icon": "fa  fa-cubes",
                     "url": "collection",
                     "children": site.collections.map(collection => {
@@ -106,7 +106,7 @@ module.exports = (collectionSchema, sites) => {
                         }
                     }
                 }, {
-                    "label": "内容集合",
+                    "label": "数据",
                     "icon": "fa fa-database",
                     "url": "data",
                     "redirect": `/${site.name}/data/${site.collections[0]?site.collections[0].name:""}`,

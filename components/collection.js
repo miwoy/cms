@@ -45,7 +45,7 @@ module.exports = (siteId, collectionSchema, collection, properties) => {
                         "type": "crud",
                         "name": "properties",
                         "draggable": true,
-                        "saveOrderApi": `put:/api/site/${siteId}/collection/${collection._id}/property/sequence`,
+                        "saveOrderApi": `put:/api/site/${siteId}/collection/${collection._id}/property/setSequence`,
                         "syncLocation": false,
                         "mode": "cards",
                         "itemClassName": "w-xxl m-xs",
@@ -90,7 +90,7 @@ module.exports = (siteId, collectionSchema, collection, properties) => {
                                 "reload": "properties",
                                 "api": `delete:/api/site/${siteId}/collection/${collection._id}/property/$name`
                             }],
-                            "visibleOn": "!this.hidden || this.showSystem"
+                            "visibleOn": "!this.system || this.showSystem"
                         }
     
                     }]

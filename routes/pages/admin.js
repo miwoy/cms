@@ -3,6 +3,10 @@ const fs = require("fs");
 const path = require("path");
 const mongo = require("lib/service/mongo")
 const objectId = require('mongodb').ObjectId
+const {
+    convertCode2Dot,
+    convertDot2Code
+} = require("lib/common/util")
 
 
 /**
@@ -78,6 +82,12 @@ router.get("/pages/site/:siteId/collection/:collectionId", async (ctx) => {
             siteId: objectId(ctx.params.siteId)
         })
     })
+    _.keys(collection.properties).forEach(key=>{
+        let value = collection.properties[key]
+        delete collection.properties[key]
+        value.name = key = convertCode2Dot(key)
+        collection.properties[key] = value
+    })
     let collectionSchema = await mongo.run("cms", async (db) => {
         return await db.collection("collectionSchema").findOne()
     })
@@ -99,6 +109,13 @@ router.get("/pages/site/:siteId/collection/:collectionId/data", async (ctx) => {
             siteId: objectId(ctx.params.siteId)
         })
     })
+    _.keys(collection.properties).forEach(key=>{
+        let value = collection.properties[key]
+        delete collection.properties[key]
+        value.name = key = convertCode2Dot(key)
+        collection.properties[key] = value
+    })
+
     let page = require("components/data")
     ctx.sbody = page(ctx.params.siteId, collection)
 })

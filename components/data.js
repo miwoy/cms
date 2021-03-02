@@ -55,6 +55,9 @@ function convert(prop) {
         case "chained-select":
             result = CONFIG["tpl"]
             break;
+        case "static":
+            result = prop
+            break;
         case "code":
             result = CONFIG["tpl"]
             result.searchable = false
@@ -125,7 +128,7 @@ module.exports = (siteId, collection) => {
             "syncLocation": false,
             "alwaysShowPagination": true,
             "draggable": true,
-            "saveOrderApi": `put:/api/site/${siteId}/collection/${collection._id}/data/sequence`,
+            "saveOrderApi": `put:/api/site/${siteId}/collection/${collection._id}/data/setSequence`,
             "columnsTogglable": true,
             "api": `get:/api/site/${siteId}/collection/${collection._id}/data?related`,
             "filterTogglable": true,
@@ -169,7 +172,28 @@ module.exports = (siteId, collection) => {
                                 "type": "form",
                                 "debug": conf.debug,
                                 "name": "sample-edit-form",
-                                "api": `put:/api/site/${siteId}/collection/${collection._id}/data/$_id`,
+                                "api": `put:/api/site/${siteId}/collection/getByName/${collection.name}/data/$_id`,
+                                "controls": _.values(collection.properties)
+                            }
+                        }
+                    },
+                    {
+                        "type": "button",
+                        "icon": "fa fa-pencil",
+                        "label": "克隆",
+                        "actionType": "dialog",
+                        "dialog": {
+                            "position": "top",
+                            "size": "lg",
+                            "title": "克隆",
+                            "body": {
+                                "type": "form",
+                                "debug": conf.debug,
+                                "data": {
+                                    "_id": null
+                                },
+                                "name": "sample-edit-form",
+                                "api": `post:/api/site/${siteId}/collection/getByName/${collection.name}/data`,
                                 "controls": _.values(collection.properties)
                             }
                         }
@@ -201,7 +225,7 @@ module.exports = (siteId, collection) => {
                     "canAccessSuperData": false,
                     "api": {
                         "method": "post",
-                        "url": `/api/site/${siteId}/collection/${collection._id}/data`
+                        "url": `/api/site/${siteId}/collection/getByName/${collection.name}/data`
                     },
                     "controls": _.values(collection.properties)
                 }

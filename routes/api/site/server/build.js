@@ -21,13 +21,15 @@ let router = new Router({});
 
 let tasks = []
 
-router.get("/log/:taskId", async (ctx) => {
-    let taskD = tasks.find(t => t.id == ctx.params.taskId)
+router.get("/:id/log/", async (ctx) => {
+    let taskD = tasks.find(t => t.id == ctx.params.id)
     if (!taskD) throw new IsNullDataGeneralityError("任务不存在")
     ctx.sbody = taskD
 })
-
-router.get("/build/schema", async (ctx, next) => {
+/**
+ * 表单 amis schema
+ */
+router.get("/schema", async (ctx, next) => {
 	ctx.site = await mongo.run("cms", async (db) => {
 		return await db.collection("site").findOne({
 			_id: objectId(ctx.params.siteId)
@@ -122,7 +124,26 @@ router.get("/build/schema", async (ctx, next) => {
     }
 })
 
-router.post("/build", async (ctx)=> {
+/**
+ * 导出
+ */
+router.post("/", async (ctx)=> {
+    // build 流程
+    /**
+     * 1. 整理需要导出的项目
+     * 2. 整理与项目对应的配置库
+     * 3. 将项目镜像与配置压缩至文件
+     * 4. 编写项目清单
+     *      1. 环境信息
+     *      2. 日期
+     *      3. hash
+     *      4. 项目@版本号@配置库版本
+     * 5. 文件命名规则
+     *      1. 项目组合+日期+环境
+     *      2. 项目组合，单项目时-项目@版本
+     *      3. 项目组合，多项目时-projects
+     *      4. 项目组合，项目组时-分组名@latest
+     */
     let id = Math.random().toString()
     let taskD = task.createTasker(id)
     tasks.push(taskD)
@@ -140,10 +161,18 @@ router.post("/build", async (ctx)=> {
     }
 })
 
+/**
+ * 下载导出文件
+ */
 router.get("/build/file", async (ctx)=> {
     ctx.set("Content-Type", "application/pdf");
 	ctx.set("Content-Disposition", "attachment; filename=README.md");    
     ctx.body = fs.createReadStream(`README.md`)
 })
+
+/**
+ * 增加版本控制管理
+ */
+
 
 module.exports = router;
