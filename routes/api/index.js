@@ -6,7 +6,6 @@ let files = [];
 let routes = null;
 const basename = path.basename(module.filename);
 const mongo = require("lib/service/mongo")
-const objectId = require('mongodb').ObjectId;
 const {
 	getAmis
 } = require("lib/common/util")
@@ -29,8 +28,8 @@ files.map(function (file) {
 
 router.post("/upload", async (ctx) => {
 	ctx.sbody = {
-		value: ctx.request.files.file.path.replace("src", ""),
-		url: `${ctx.request.origin}${ctx.request.files.file.path.replace("src", "")}`
+		value: ctx.request.files.file,
+		url: `${ctx.request.origin}${ctx.request.files.file}`
 	}
 })
 
@@ -44,15 +43,15 @@ async function upload(ctx, next) {
 		let file = files[i]
 		try {
 			for (let j = 0; j < file.hash.length; j += charLen) {
-				
-				filePath = path.join(filePath, file.hash.slice(j, j+charLen))
+
+				filePath = path.join(filePath, file.hash.slice(j, j + charLen))
 				if (!fs.existsSync(filePath)) {
 					fs.mkdirSync(filePath)
 				}
 			}
 			filePath = path.join(filePath, file.name)
-			fs.renameSync(path.resolve(file.path),path.resolve(filePath))
-			file.path = filePath
+			fs.renameSync(path.resolve(file.path), path.resolve(filePath))
+			file.path = filePath.replace("src", "")
 		} catch (e) {
 			fs.unlink(file.path)
 			throw e
@@ -60,18 +59,23 @@ async function upload(ctx, next) {
 	}
 	let bulkData = files.map(file => {
 		file = {
-			insertOne: {
-				document: file
+			updateOne: {
+				filter: {
+					hash: file.hash
+				},
+				update: {
+					$set: file
+				},
+				upsert: true
 			}
 		}
 
 		return file
 	})
-	// return console.log(files)
 	await mongo.run("cms", async (db) => {
 		return await db.collection("file").bulkWrite(bulkData)
 	})
-	_.keys(ctx.request.files).forEach((key, i)=> {
+	_.keys(ctx.request.files).forEach((key, i) => {
 		ctx.request.files[key] = files[i]
 	})
 	await next()
@@ -79,8 +83,8 @@ async function upload(ctx, next) {
 
 router.post("/upload/file", upload, async (ctx) => {
 	ctx.sbody = {
-		value: ctx.request.files.file.path.replace("src", ""),
-		url: `${ctx.request.origin}${ctx.request.files.file.path.replace("src", "")}`
+		value: ctx.request.files.file.path,
+		url: `${ctx.request.origin}${ctx.request.files.file}`
 	}
 })
 

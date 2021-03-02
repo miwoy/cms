@@ -44,6 +44,7 @@ module.exports = (collectionSchema, sites) => {
                             "type": "form",
                             "title": "编辑菜单",
                             "reload": "app",
+                            "affixFooter": true,
                             "data": {
                                 "pages": site.pages || [],
                                 "_id": site._id

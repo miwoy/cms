@@ -1,7 +1,7 @@
 function convert(prop) {
     let result = {
         type: prop.type,
-        width: prop.width || "150px"
+        width: prop.width || 150
     }
     let CONFIG = {
         "tpl": {
@@ -18,11 +18,11 @@ function convert(prop) {
                 "source": prop.source
             } : false,
             searchable: prop.type != "select",
-            width: prop.width || "150px",
+            width: prop.width || 150,
         },
         "json": {
             type: "json",
-            width: prop.width || "200px",
+            width: prop.width || 200,
         },
         "mapping": {
             type: "mapping",
@@ -36,18 +36,19 @@ function convert(prop) {
                 "options": prop.options || undefined,
                 "source": prop.source
             } : false,
-            width: prop.width || "100px",
+            width: prop.width || 100,
         },
         "link": {
             type: "link",
             href: `\${${prop.name}}`,
             body: `\${${prop.name}|split:/|last}`,
-            width: prop.width || "200px",
+            width: prop.width || 200,
         }
 
     }
 
     switch (prop._ref) {
+        case "text":
         case "textarea":
         case "number":
         case "rich-text":
@@ -66,7 +67,19 @@ function convert(prop) {
             if (prop.options) {
                 result = CONFIG["mapping"]
             } else {
-                result = CONFIG["tpl"]
+                result = {
+                    filterable: {
+                        "options": prop.options || undefined,
+                        "source": prop.source
+                    },
+                    width: prop.width || 150,
+                    "quickEdit": {
+                        ...prop,
+                        disabled: true,
+                        mode: "inline",
+                        label: false
+                    }
+                }
             }
             break;
         case "custom":
@@ -77,7 +90,7 @@ function convert(prop) {
                 type: "link",
                 href: `\${${prop.name}}`,
                 body: `\${${prop.name}|split:/|last}`,
-                width: prop.width || "200px",
+                width: prop.width || 200,
             }
             if (prop.multiple) {
                 result = {

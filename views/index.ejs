@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <link rel="stylesheet" href="/sdk/sdk.css" />
+    <link rel="stylesheet" href="/css/style.css" />
     <style>
         html,
         body,
@@ -32,14 +33,14 @@
             amisLib.registerFilter('find', function (input, source) {
                 try {
                     source = JSON.parse(unescape(source));
-                    let obj = source.find(obj=>obj.value==input)
+                    let obj = source.find(obj => obj.value == input)
                     return obj && obj.label
                 } catch (e) {
                     console.error(e)
                     return input
                 }
-                
-                
+
+
             });
 
             const app = {
@@ -109,8 +110,36 @@
                     jumpTo: (to) => {
                         if (to.slice(0, 4) == "http") {
                             location.href = to;
+                        } else if(to.slice(0, 9)== "download:") {
+                            location.href = to.slice(9);
                         } else {
-                            location.hash = to;
+                            if (to && ~to.indexOf("?")) {
+                                let q = {
+                                    format: (query) => {
+                                        return Object.keys(query).map(key => `${key}=${query[key]}`)
+                                            .join("&")
+                                    },
+                                    parse: (str) => {
+                                        return str.split("?")[1] ? str.split("?")[1].split("&")
+                                            .reduce((acc, cur) => {
+                                                if (cur) {
+                                                    let v = cur.split("=")
+                                                    acc[v[0]] = v[1]
+                                                }
+                                                return acc
+                                            }, {}) : {}
+                                    }
+                                }
+
+                                let query = location.search ? q.parse(location.search) : {}
+                                
+                                query = Object.assign(query, q.parse(to))
+                                location.href =
+                                    `${location.origin + location.pathname}?${q.format(query)}#${to.split("?")[0]}`
+                            } else {
+                                location.hash = to;
+                            }
+
                         }
 
                     },
@@ -134,7 +163,7 @@
                             })(pathname);
                         }
 
-                        return pathname === link;
+                        return pathname.split("?")[0] === link;
                     },
                 }
             );

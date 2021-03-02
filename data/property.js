@@ -678,7 +678,7 @@ let properties = [{
         "source": {
             "placeholder": "数据源",
             "type": "text",
-            "label": "数据键",
+            "label": "数据源",
             "description": "API或者数据映射",
             "name": "source",
             "mode": "horizontal"
@@ -1642,9 +1642,12 @@ let properties = [{
                 "name": "collection",
                 "source": {
                     "method": "get",
-                    "url": "/api/site/$siteId/collection?all",
-                    "adaptor": "return {\\n    ...payload,\\n    data:{options:payload.data.map(v=>({label:v.label || v.name,value: v._id}))}\\n}"
+                    "url": "/api/site/$siteId/collection?_all",
+                    "cache": 3000
+                    // "adaptor": "return {\n    ...payload,\n    data:{options:payload.data.map(v=>({label:v.label, value: v._id}))}\n}"
                 },
+                "labelField": "label",
+                "valueField": "_id",
                 "required": true
             }, {
                 "placeholder": "关联属性",
@@ -1655,9 +1658,11 @@ let properties = [{
                 "source": {
                     "method": "get",
                     "url": "/api/site/$siteId/collection/$collection/property",
-                    "sendOn": "this.collection",
-                    "adaptor": "return {\\n    ...payload,\\n    data:{options:payload.data.items.map(v=>({label:v.label,value:v.name}))}\\n}"
+                    "sendOn": "this.collection"
+                    // "adaptor": "return {\n    ...payload,\n    data:{options:payload.data.items.map(v=>({label:v.label,value:v.name}))}\n}"
                 },
+                "labelField": "label",
+                "valueField": "name",
                 "required": true
             }, {
                 "type": "text",

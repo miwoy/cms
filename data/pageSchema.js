@@ -85,8 +85,8 @@ module.exports = [{
             "name": "toolbar",
             "type": "editor",
             "language": "json",
-            "value": {},
-            "required": true,
+            "value": [],
+            "required": false,
             "mode": "horizontal"
         }
     }

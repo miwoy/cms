@@ -43,7 +43,7 @@ router.get("/", async (ctx) => {
 	// 按字段搜索
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 
@@ -151,7 +151,7 @@ router.get("/", async (ctx) => {
 router.get("/count", async (ctx) => {
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 	let query = {}
@@ -170,6 +170,7 @@ router.get("/count", async (ctx) => {
 			}
 		}
 	})
+    console.log(query)
 	let result = await mongo.run(ctx.site.name, async (db) => {
 		return await db.collection(collection.name).count({
 			...query
@@ -187,7 +188,7 @@ router.get("/count", async (ctx) => {
 router.get("/getByName", async (ctx) => {
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 	let result = await mongo.run(ctx.site.name, async (db) => {
@@ -205,7 +206,7 @@ router.get("/getByName", async (ctx) => {
 router.get("/:id", async (ctx) => {
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 	let result = await mongo.run(ctx.site.name, async (db) => {
@@ -225,7 +226,7 @@ router.get("/:id", async (ctx) => {
 router.post("/", async (ctx) => {
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 	_.values(collection.properties).map(prop => {
@@ -274,7 +275,7 @@ router.put("/sequence", async (ctx) => {
 	})
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 	await mongo.run(ctx.site.name, async (db) => {
@@ -289,7 +290,7 @@ router.put("/sequence", async (ctx) => {
 router.put("/:id", async (ctx) => {
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 	console.log(ctx.rbody, ctx.request.files)
@@ -317,7 +318,7 @@ router.put("/:id", async (ctx) => {
 router.delete("/:id", async (ctx) => {
 	let collection = await mongo.run("cms", async (db) => {
 		return await db.collection("collection").findOne({
-			_id: objectId(ctx.params.collectionId)
+			name: ctx.params.collectionName
 		})
 	})
 	let result = await mongo.run(ctx.site.name, async (db) => {

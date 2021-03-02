@@ -10,17 +10,33 @@ const {
 } = require("lib/common/util")
 let router = new Router({});
 
-files = fs
-    .readdirSync(__dirname)
-    .filter(function (file) {
-        return (file.indexOf(".") !== 0) && (file !== basename);
-    });
-files.map(function (file) {
-    var _router = require(path.join(__dirname, file));
-    file = file.split(".js")[0];
-    router.use("/:collectionId/" + file.split(".js")[0], _router.routes());
-    return file;
-});
+let propertyRouter = require("./property")
+router.use("/getByName/:collectionName", async function(ctx, next){
+    ctx.collection = await mongo.run("cms", async (db) => {
+		return await db.collection("collection").findOne({
+			name: ctx.params.collectionName
+		})
+	})
+    await next()
+}, propertyRouter.routes());
+
+let nameRouter = require("./name")
+router.use("/getByName/:collectionName/data", nameRouter.routes());
+
+let dataRouter = require("./data")
+router.use("/:collectionId/data", dataRouter.routes());
+
+// files = fs
+//     .readdirSync(__dirname)
+//     .filter(function (file) {
+//         return (file.indexOf(".") !== 0) && (file !== basename);
+//     });
+// files.map(function (file) {
+//     var _router = require(path.join(__dirname, file));
+//     file = file.split(".js")[0];
+//     router.use("/:collectionName/" + file.split(".js")[0], _router.routes());
+//     return file;
+// });
 
 router.get("/", async (ctx) => {
 
@@ -55,7 +71,7 @@ router.get("/", async (ctx) => {
     })
     query.siteId = objectId(ctx.params.siteId)
     let result
-    if (ctx.query.all !== undefined) {
+    if (ctx.query._all !== undefined) {
         result = await mongo.run("cms", async (db) => {
             let items = await db.collection("collection")
                 .find(query)
@@ -78,7 +94,6 @@ router.get("/", async (ctx) => {
             }
         })
     }
-
     ctx.sbody = result
 })
 
@@ -222,6 +237,25 @@ router.get("/:id/property", async (ctx) => {
 })
 
 /**
+ * 获取模型属性
+ */
+router.get("/:id/property/:name", async (ctx) => {
+    let properties = []
+    let result = await mongo.run("cms", async (db) => {
+        properties = await db.collection("property").find().toArray()
+        return await db.collection("collection").findOne({
+            _id: objectId(ctx.params.id)
+        })
+    })
+
+
+    result = result.properties[ctx.params.name]
+    result._property = properties.find(prop => prop.name == result._ref)
+
+    ctx.sbody = result
+})
+
+/**
  * 修改顺序
  */
 router.put("/:id/property/sequence", async (ctx) => {
@@ -248,7 +282,8 @@ function convert2Amis(data, options) {
     if (data._ref == "related") {
         data.source = {
             method: "get",
-            url: `/api/site/${options.siteId}/collection/${data.related.collection}/data?${(data.related.filter?["all",data.related.filter ]:["all"]).join("&")}`,
+            "cache": 3000,
+            url: `/api/site/${options.siteId}/collection/${data.related.collection}/data?${(data.related.filter?["_all",data.related.filter ]:["_all"]).join("&")}`,
             adaptor: `return {\n    ...payload,\n    data:{options:payload.data.map(v=>({label:v.label || v.name,value: v.${data.related.property}}))}\n}`
         }
     } else if (data._ref == "custom") {
