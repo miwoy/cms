@@ -740,7 +740,8 @@ let properties = [{
                     "type": "text",
                     "required": true
                 }]
-            }]
+            }],
+            "visibleOn": "!this.source || !this.source.url"
         },
         "source": {
             "placeholder": "数据源",
@@ -749,6 +750,7 @@ let properties = [{
             "description": "API或者数据映射",
             "name": "source",
             "multiLine": true,
+            "visibleOn": "!this.options || !this.options.length > 0",
             "controls": [{
                 "type": "text",
                 "name": "method",
@@ -763,16 +765,44 @@ let properties = [{
                 "type": "text",
                 "name": "sendOn",
                 "label": "发送条件"
+            }, {
+                "type": "number",
+                "name": "cache",
+                "placeholder": "单位ms",
+                "label": "缓存",
+                "value": 0
             }]
+        },
+        "labelField": {
+            "type": "text",
+            "label": "绑定label字段",
+            "name": "labelField",
+            "placeholder": "默认label",
+            "visibleOn": "this.source && this.source.url"
+        },
+        "valueField": {
+            "type": "text",
+            "label": "绑定value字段",
+            "name": "valueField",
+            "placeholder": "默认value",
+            "visibleOn": "this.source && this.source.url"
         },
         "value": {
             "placeholder": "默认值",
             "type": "select",
             "source": "${options}",
-            "value": false,
             "label": "默认值",
             "name": "value",
-            "mode": "horizontal"
+            "mode": "horizontal",
+            "visibleOn": "this.options && this.options.length>0"
+        },
+        "value2": {
+            "placeholder": "默认值",
+            "type": "text",
+            "label": "默认值",
+            "name": "value",
+            "mode": "horizontal",
+            "visibleOn": "this.source && this.source.url"
         },
         "delimeter": {
             "type": "text",
@@ -781,18 +811,6 @@ let properties = [{
             "name": "delimeter",
             "mode": "horizontal",
             "visibleOn": "this.joinValues"
-        },
-        "labelField": {
-            "type": "text",
-            "label": "绑定label字段",
-            "name": "labelField",
-            "placeholder": "默认label"
-        },
-        "valueField": {
-            "type": "text",
-            "label": "绑定value字段",
-            "name": "valueField",
-            "placeholder": "默认value"
         },
         "multiple": {
             "type": "switch",
@@ -833,6 +851,12 @@ let properties = [{
             "mode": "horizontal",
             "value": false,
             "option": "设置此字段排序功能"
+        },
+        "clearable": {
+            "name": "clearable",
+            "type": "switch",
+            "hidden": true,
+            "value": true
         },
         "hidden": {
             "type": "switch",
@@ -1061,6 +1085,11 @@ let properties = [{
                 "isNumeric": true,
                 "minimum": 0
             }
+        },
+        "useChunk": {
+            "type": "switch",
+            "value": false,
+            "name": "useChunk"
         },
         "multiple": {
             "type": "switch",
@@ -1766,11 +1795,10 @@ let properties = [{
                 "source": {
                     "method": "get",
                     "url": "/api/site/$siteId/collection/$collection/property",
-                    "sendOn": "this.collection"
-                    // "adaptor": "return {\n    ...payload,\n    data:{options:payload.data.items.map(v=>({label:v.label,value:v.name}))}\n}"
+                    "sendOn": "this.collection",
+                    "cache": 3000,
+                    "adaptor": "return {\n    ...payload,\n    data:{options:payload.data.items.map(v=>({label:v.label,value:v.name}))}\n}"
                 },
-                "labelField": "label",
-                "valueField": "name",
                 "required": true
             }, {
                 "type": "text",
@@ -1796,6 +1824,24 @@ let properties = [{
             "value": false,
             "option": "可多选"
         },
+        "joinValues": {
+            "type": "switch",
+            "label": "是否拼接",
+            "name": "joinValues",
+            "mode": "horizontal",
+            "value": false,
+            "option": "默认使用delimeter拼接",
+            "hidden": true
+        },
+        "extractValue": {
+            "type": "switch",
+            "label": "是否抽离",
+            "name": "extractValue",
+            "mode": "horizontal",
+            "value": true,
+            "option": "是否将value值抽取出来组成新的数组，只有在joinValues是false是生效",
+            "hidden": true
+        },
         "sortable": {
             "type": "switch",
             "label": "是否设置为排序字段",
@@ -1803,6 +1849,12 @@ let properties = [{
             "mode": "horizontal",
             "value": false,
             "option": "设置此字段排序功能"
+        },
+        "clearable": {
+            "name": "clearable",
+            "type": "switch",
+            "hidden": true,
+            "value": true
         },
         "hidden": {
             "type": "switch",
@@ -1848,6 +1900,13 @@ properties = properties.map(prop => {
         "label": "是否为系统字段",
         "value": false,
         "mode": "horizontal",
+    }
+    prop.properties.width = {
+        "type": "number",
+        "name": "width",
+        "label": "展示列宽度",
+        "value": 200,
+        "mode": "horizontal"
     }
 
     return prop

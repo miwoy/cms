@@ -18,6 +18,7 @@ router.post("/data", async (ctx, next) => {
    await mongo.run(ctx.site.name, async (db)=> {
         await db.collection("reversion").insertOne({
             code: ctx.body.data.updatedAt,
+            collection: ctx.collection.name,
             collectionId: ctx.collection._id,
             docId: ctx.body.data._id,
             document: ctx.body.data
@@ -28,7 +29,6 @@ router.post("/data", async (ctx, next) => {
 router.put("/data/:id", async (ctx, next) => {
     
     await next()
-    console.log("debug")
     // 增加修订记录
     await mongo.run(ctx.site.name, async (db)=> {
         let document = await db.collection(ctx.collection.name).findOne({
@@ -36,6 +36,7 @@ router.put("/data/:id", async (ctx, next) => {
         })
         await db.collection("reversion").insertOne({
             code: document.updatedAt,
+            collection: ctx.collection.name,
             collectionId: ctx.collection._id,
             docId: document._id,
             document: document

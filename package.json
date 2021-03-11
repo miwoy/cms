@@ -10,7 +10,8 @@
     "test": "NODE_PATH=./ DEBUG=deployment:*  NODE_ENV=mocha npx nyc --reporter=text-summary --include 'routes/**/*.js' --include 'application/**/*.js' mocha",
     "apidoc": "NODE_PATH=./ npx apidoc -i lib/apiDoc/ -i routes/  -o src/docs",
     "seeder": "NODE_PATH=./ DEBUG=deployment:* node ./seeder",
-    "sp": "NODE_PATH=./ DEBUG=deployment:* node ./seeder/property.js"
+    "sp": "NODE_PATH=./ DEBUG=deployment:* node ./seeder/property.js",
+    "deploy": "NODE_PATH=./ node lib/scripts/deploy"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^7.6.1",
@@ -33,7 +34,9 @@
     "koa2-cors": "^2.0.6",
     "lodash": "^4.17.15",
     "marked": "^0.3.19",
+    "md5": "^2.3.0",
     "moment": "^2.24.0",
+    "moment-timezone": "^0.5.33",
     "mongodb": "^3.6.3",
     "mysql2": "^2.1.0",
     "node-schedule": "^1.3.2",

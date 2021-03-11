@@ -16,11 +16,7 @@ let router = new Router()
  * 获取属性
  */
 router.get("/:name", async (ctx) => {
-    let property = await mongo.run("cms", async (db) => {
-        return await db.collection("property").findOne({
-            name: ctx.params.name,
-        })
-    })
+    let property = require("data/property").find(prop => prop.name == ctx.params.name)
 
     ctx.sbody = ctx.query.type == "amis" ? getAmis(property) : property
 })

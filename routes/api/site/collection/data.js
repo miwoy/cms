@@ -49,6 +49,7 @@ module.exports = () => {
 		let collection = ctx.collection
 
 		_.keys(ctx.q).forEach(key => {
+			collection.properties[key] = collection.properties[convertDot2Code(key)]
 			if (ctx.q[key] && collection.properties[key]) {
 				// 对不同类型进行独立构建搜索方式
 				if (collection.properties[key].type == "chained-select") {
@@ -113,11 +114,14 @@ module.exports = () => {
 		}
 
 		let result
+		ctx.q.pageSize = ctx.q.pageSize > 1000 ? 1000 : ctx.q.pageSize
 		if (ctx.query._all !== undefined) {
+			ctx.q.pageSize = 1000
 			result = await mongo.run(ctx.site.name, async (db) => {
 				let items = await db.collection(collection.name)
 					.find(query)
 					.sort(sortData)
+					.limit(ctx.q.pageSize)
 					.toArray()
 				// if (ctx.query.related !== undefined) {
 				// 	await related(collection, items)
@@ -249,10 +253,9 @@ module.exports = () => {
 		})
 
 		data.createdAt = data.updatedAt = Math.round(Date.now() / 1000)
+		data.sequence = -data.createdAt
 		let result = await mongo.run(ctx.site.name, async (db) => {
-			return await db.collection(collection.name).insertOne(data, {
-				ignoreUndefined: true
-			})
+			return await db.collection(collection.name).insertOne(data)
 		})
 		ctx.sbody = _.assign({}, data, {
 			_id: result.insertedId
@@ -309,18 +312,15 @@ module.exports = () => {
 		})
 		data.updatedAt = Math.round(Date.now() / 1000)
 		delete data._id
-
 		let result = await mongo.run(ctx.site.name, async (db) => {
 			return await db.collection(collection.name).updateOne({
 				_id: objectId(ctx.params.id)
 			}, {
 				$set: data
-			}, {
-				ignoreUndefined: true
 			})
 		})
-
-		ctx.sbody = !!result.result.ok
+		data._id = objectId(ctx.params.id)
+		ctx.sbody = data
 	})
 
 	/**

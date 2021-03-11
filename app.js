@@ -22,6 +22,7 @@ const router = require("./routes");
  */
 app.use(bodyparser({
 	formidable:{
+		maxFileSize: 10 * 1024 * 1024 * 1024,
 		uploadDir: conf.uploadDir,
 		hash: "md5",
 		keepExtensions: true
@@ -30,10 +31,10 @@ app.use(bodyparser({
 	urlencoded: true
  })); // 格式化body
 app.use(logger()); // 日志打印
-app.use(auth({
-	name: conf.name,
-	pass: conf.secret
-}));
+// app.use(auth({
+// 	name: conf.name,
+// 	pass: conf.secret
+// }));
 app.use(middleware.exceptionHandler);
 app.use(middleware.cors); // 设置跨域访问
 app.use(middleware.returnObject);

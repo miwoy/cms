@@ -28,8 +28,8 @@ files.map(function (file) {
 
 router.post("/upload", async (ctx) => {
 	ctx.sbody = {
-		value: ctx.request.files.file,
-		url: `${ctx.request.origin}${ctx.request.files.file}`
+		value: ctx.request.files.file.path.replace("src", ""),
+		// url: `${ctx.request.origin}${ctx.request.files.file}`
 	}
 })
 
@@ -51,7 +51,7 @@ async function upload(ctx, next) {
 			}
 			filePath = path.join(filePath, file.name)
 			fs.renameSync(path.resolve(file.path), path.resolve(filePath))
-			file.path = filePath.replace("src", "")
+			file.path = filePath
 		} catch (e) {
 			fs.unlink(file.path)
 			throw e
@@ -83,8 +83,8 @@ async function upload(ctx, next) {
 
 router.post("/upload/file", upload, async (ctx) => {
 	ctx.sbody = {
-		value: ctx.request.files.file.path,
-		url: `${ctx.request.origin}${ctx.request.files.file}`
+		value: ctx.request.files.file.path.replace("src", ""),
+		// url: `${ctx.request.origin}${ctx.request.files.file}`
 	}
 })
 

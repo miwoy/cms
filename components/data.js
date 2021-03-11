@@ -6,11 +6,11 @@ function convert(prop) {
     let CONFIG = {
         "tpl": {
             type: "tpl",
-            tpl: `\${${prop.name}|truncate:15}`,
+            tpl: `\${${prop.name}|truncate:30}`,
             popOver: {
                 "body": {
                     "type": "tpl",
-                    "tpl": `$${prop.name}`
+                    "tpl": `\${${prop.name}}`
                 }
             },
             filterable: prop.type == "select" ? {
@@ -64,6 +64,7 @@ function convert(prop) {
             break
         case "json":
             result = CONFIG["json"]
+            result.levelExpand = 0
             break;
         case "enum":
         case "related":
@@ -204,7 +205,7 @@ module.exports = (siteId, collection) => {
                         "actionType": "ajax",
                         "label": "删除",
                         "confirmText": "您确认要删除?",
-                        "api": `delete:/api/site/${siteId}/collection/${collection._id}/data/$_id`
+                        "api": `delete:/api/site/${siteId}/collection/getByName/${collection.name}/data/$_id`
                     }
                 ],
                 "toggled": true

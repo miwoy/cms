@@ -20,9 +20,7 @@ module.exports = () => {
      */
     router.get("/", async (ctx) => {
         let result = ctx.collection
-        let properties = await mongo.run("cms", async (db) => {
-            return await db.collection("property").find().toArray()
-        })
+        let properties = require("data/property")
 
         let items = (result ? _.values(result.properties) : []).map(p => {
             p._property = properties.find(prop => prop.name == p._ref)
@@ -44,9 +42,7 @@ module.exports = () => {
      */
     router.get("/:name", async (ctx) => {
         ctx.params.name = convertDot2Code(ctx.params.name)
-        let properties = await mongo.run("cms", async (db) => {
-            return await db.collection("property").find().toArray()
-        })
+        let properties = require("data/property")
 
         let property = ctx.collection.properties[ctx.params.name]
 

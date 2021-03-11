@@ -33,9 +33,7 @@ router.get("/pages", async (ctx) => {
                 _id: 1
             }).toArray()
     })
-    let collectionSchema = await mongo.run("cms", async (db) => {
-        return await db.collection("collectionSchema").findOne()
-    })
+    let collectionSchema = require("data/collectionSchema")[0]
 
     let sites = await mongo.run("cms", async (db) => {
         return await db.collection("site").find({
@@ -90,12 +88,8 @@ router.get("/pages/site/:siteId/collection/:collectionId", async (ctx) => {
         value.name = key = convertCode2Dot(key)
         collection.properties[key] = value
     })
-    let collectionSchema = await mongo.run("cms", async (db) => {
-        return await db.collection("collectionSchema").findOne()
-    })
-    let properties = await mongo.run("cms", async (db) => {
-        return await db.collection("property").find().sort().toArray()
-    })
+    let collectionSchema = require("data/collectionSchema")[0]
+    let properties = require("data/property")
     let page = require("components/collection")
     ctx.sbody = page(ctx.params.siteId, collectionSchema, collection, properties)
 })
