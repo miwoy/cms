@@ -221,15 +221,14 @@ router.post("/", async (ctx) => {
                     }
                 }).toArray()
             })
-            _services.forEach(service => {
-                service.versionId = value[service.name].versionId
-            })
+
             services = services.concat(_services)
         }
     }
 
     await getServices("basic", basic)
     await getServices("business", business)
+    
     if (services.length == 0) throw new RequiredArgsGeneralityError("请选择要导出的项目")
 
     let env
@@ -253,10 +252,10 @@ router.post("/", async (ctx) => {
         site.env = site.env || ""
         site.env += siteEnv.env
     })
-
+    
     // 整理
     for (let service of services) {
-        service.versionId = ctx.rbody[service.category][service.code] && ctx.rbody[service.category][service.code].versionId
+        service.versionId = ctx.rbody[service.category][service.name] && ctx.rbody[service.category][service.name].versionId
         if (!service.versionId) {
             let versions = await mongo.run("server", async (db) => {
                 return await db.collection("version").find({
@@ -305,7 +304,6 @@ router.post("/", async (ctx) => {
         }).toArray()
     })
 
-
     // 追加版本信息
     services.map(service => {
         service.version = versions.find(v => v._id.toString() == service.versionId).name
@@ -346,6 +344,7 @@ router.post("/", async (ctx) => {
         services: services,
         log: []
     }
+
     let result = await mongo.run("server", async (db) => {
         return db.collection("task").insertOne(task)
     })
