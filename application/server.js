@@ -80,7 +80,29 @@ error_exit() {
     exit 1
 }
             `,
-            "install.sh": site.install,
+            "install.sh": `
+#!/bin/bash
+
+. ./.env
+
+error_exit() {
+    echo "$1" 1>&2
+    exit 1
+}
+
+
+echo "销毁历史容器"
+docker-compose down 2>&1
+
+echo "启动新容器"
+docker-compose up -d || error_exit "启动容器失败"
+
+echo "清理空镜像"
+docker image prune -f > /dev/null 2>&1
+
+echo "完成"
+exit 0
+            `,
             "docker-compose.yml": site.dockerCompose
         }
 
@@ -91,8 +113,8 @@ error_exit() {
 echo "加载镜像「${imageName}」"
 docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n
             `
-            etcd["before_post.sh"] += (service.beforePost || "") + "\n" + service.etcd["beforePost"] + "\n"
-            etcd["after_post.sh"] += (service.afterPost || "") + "\n" + service.etcd["afterPost"] + "\n"
+            etcd["before_post.sh"] += (service.beforePost || "") + "\n" + (service.etcd["beforePost"] || "") + "\n"
+            etcd["after_post.sh"] += (service.afterPost || "") + "\n" + (service.etcd["afterPost"] || "") + "\n"
             if (service.type == "REPO") {
                 await execAsyncAndLog(pushLog, `${service.auth && service.auth.username && service.auth.password?`docker login -u ${service.auth.username} -p ${service.auth.password} chaozhou-docker.pkg.coding.net &&`:""} docker pull ${service.image}:${service.version}`, {
                     cwd: imageDirPath

@@ -50,13 +50,15 @@ router.get("/schema", async (ctx, next) => {
 }, async (ctx) => {
     let services = await mongo.run("server", async (db) => {
         if (!ctx.q.siteId) return []
-        let site = await db.collection("site").findOne({
-            _id: objectId(ctx.q.siteId)
+        console.log()
+        let siteEnv = await db.collection("siteEnv").findOne({
+            sid: ctx.q.siteId,
+            envId: ctx.q.envId
         })
-
+        if (!siteEnv) return ctx.sbody = []
         let versions = await db.collection("version").find({
             serviceId: {
-                $in: site.serviceIds
+                $in: siteEnv.serviceIds
             }
         }).sort({
             sequence: 1
@@ -64,7 +66,7 @@ router.get("/schema", async (ctx, next) => {
 
         let services = await db.collection("service").find({
             _id: {
-                $in: site.serviceIds.map(id => objectId(id))
+                $in: siteEnv.serviceIds.map(id => objectId(id))
             }
         }).toArray()
 
@@ -103,13 +105,13 @@ router.get("/schema", async (ctx, next) => {
                 }].concat(item.services.map(p => {
                     return {
                         "type": "combo",
-                        "name": p.code,
+                        "name": p.name,
                         "label": false,
                         "multiLine": true,
                         "visibleOn": `!this.isSelect`,
                         "controls": [{
                                 "type": "checkbox",
-                                "label": p.name,
+                                "label": p.label,
                                 "name": "isSelect",
                                 "className": "w-sm",
                                 "mode": "inline",
@@ -189,7 +191,7 @@ router.post("/", async (ctx) => {
         business
     } = ctx.rbody
     let services = []
-
+    console.log(ctx.rbody)
     async function getServices(key, value) {
         if (value.isSelect) {
             let _services = await mongo.run("server", async (db) => {
@@ -214,7 +216,7 @@ router.post("/", async (ctx) => {
             let codes = _.keys(value).filter(key => _.isObject(value[key]) && value[key].isSelect)
             let _services = await mongo.run("server", async (db) => {
                 return await db.collection("service").find({
-                    code: {
+                    name: {
                         "$in": codes
                     }
                 }).toArray()
@@ -222,9 +224,6 @@ router.post("/", async (ctx) => {
             services = services.concat(_services)
         }
     }
-
-
-
 
     await getServices("basic", basic)
     await getServices("business", business)
@@ -242,10 +241,13 @@ router.post("/", async (ctx) => {
         site = await db.collection("site").findOne({
             _id: objectId(siteId)
         })
+
         siteEnv = await db.collection("siteEnv").findOne({
             envId: envId,
-            siteId: siteId
+            sid: siteId
         })
+
+        site.dockerCompose = siteEnv.dockerCompose
     })
 
     // 整理
