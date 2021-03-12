@@ -9,3 +9,4 @@ mochawesome-report/
 Dockerfile
 .nyc_output/
 deploy/
+.git/
