@@ -191,7 +191,7 @@ router.post("/", async (ctx) => {
         business
     } = ctx.rbody
     let services = []
-    console.log(ctx.rbody)
+
     async function getServices(key, value) {
         if (value.isSelect) {
             let _services = await mongo.run("server", async (db) => {
@@ -221,13 +221,15 @@ router.post("/", async (ctx) => {
                     }
                 }).toArray()
             })
+            _services.forEach(service => {
+                service.versionId = value[service.name].versionId
+            })
             services = services.concat(_services)
         }
     }
 
     await getServices("basic", basic)
     await getServices("business", business)
-
     if (services.length == 0) throw new RequiredArgsGeneralityError("请选择要导出的项目")
 
     let env
