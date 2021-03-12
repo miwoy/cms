@@ -248,6 +248,8 @@ router.post("/", async (ctx) => {
         })
 
         site.dockerCompose = siteEnv.dockerCompose
+        site.env = site.env || ""
+        site.env += siteEnv.env
     })
 
     // 整理
@@ -281,9 +283,9 @@ router.post("/", async (ctx) => {
         if (service.category == "business" && !etcd) throw new InvalidArgsGeneralityError(`项目「${service.name}」未找到「${env.name}」环境的配置信息`)
         etcd = etcd || {}
         service.etcd = {
-            "env":[(site.env || ""), (siteEnv.env || ""), (etcd.env || "")].join("\n"),
+            "env": etcd.env || "",
             "before_post":  etcd.before_post || "",
-            "afterPost":[(siteEnv.afterPost || ""), (etcd.afterPost || "")].join("\n"),
+            "afterPost": etcd.afterPost || "",
             "port": etcd.port
         }
     }
