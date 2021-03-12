@@ -91,6 +91,7 @@ error_exit() {
 echo "加载镜像「${imageName}」"
 docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n
             `
+            etcd["before_post.sh"] += (service.beforePost || "") + "\n" + service.etcd["beforePost"] + "\n"
             etcd["after_post.sh"] += (service.afterPost || "") + "\n" + service.etcd["afterPost"] + "\n"
             if (service.type == "REPO") {
                 await execAsyncAndLog(pushLog, `${service.auth && service.auth.username && service.auth.password?`docker login -u ${service.auth.username} -p ${service.auth.password} chaozhou-docker.pkg.coding.net &&`:""} docker pull ${service.image}:${service.version}`, {

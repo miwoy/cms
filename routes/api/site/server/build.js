@@ -233,6 +233,7 @@ router.post("/", async (ctx) => {
 
     let env
     let site
+    let siteEnv
 
     await mongo.run("server", async (db) => {
         env = await db.collection("env").findOne({
@@ -241,9 +242,13 @@ router.post("/", async (ctx) => {
         site = await db.collection("site").findOne({
             _id: objectId(siteId)
         })
+        siteEnv = await db.collection("siteEnv").findOne({
+            envId: envId,
+            siteId: siteId
+        })
     })
 
-    // 整理醒目
+    // 整理
     for (let service of services) {
         service.versionId = ctx.rbody[service.category][service.code] && ctx.rbody[service.category][service.code].versionId
         if (!service.versionId) {
@@ -263,26 +268,20 @@ router.post("/", async (ctx) => {
             service.versionId = versions[0]._id.toString()
         }
 
-        let siteService
         let etcd
-        await mongo.run("server", async (db) => {
-            siteService = await db.collection("siteService").findOne({
-                serviceId: service._id.toString(),
-                siteId: siteId
-            })
+        await mongo.run("server", async (db) => { 
             etcd = await db.collection("etcd").findOne({
-                siteServiceId: siteService._id.toString(),
-                envId: {
-                    "$in": [null, envId]
-                }
+                siteEnvId: siteEnv._id.toString(),
+                serviceId: service._id.toString()
             })
         })
         
         if (service.category == "business" && !etcd) throw new InvalidArgsGeneralityError(`项目「${service.name}」未找到「${env.name}」环境的配置信息`)
         etcd = etcd || {}
         service.etcd = {
-            "env":[(siteService.env || ""), (etcd.env || "")].join("\n"),
-            "afterPost":[(siteService.afterPost || ""), (etcd.afterPost || "")].join("\n"),
+            "env":[(site.env || ""), (siteEnv.env || ""), (etcd.env || "")].join("\n"),
+            "before_post":  etcd.before_post || "",
+            "afterPost":[(siteEnv.afterPost || ""), (etcd.afterPost || "")].join("\n"),
             "port": etcd.port
         }
     }

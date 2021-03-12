@@ -1,0 +1,11 @@
+node_modules/
+docker-compose.yml
+package-lock.json
+yarn-lock.json
+coverage/
+build/
+mochawesome-report/
+*.log
+Dockerfile
+.nyc_output/
+deploy/
