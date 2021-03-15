@@ -3,6 +3,7 @@ FROM node:alpine
 WORKDIR /usr/local/app
 COPY ./ .
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+RUN apk update && apk add --no-cache docker-cli
 RUN apk add --update openssl && \
     rm -rf /var/cache/apk/*
 RUN yarn  --registry=https://registry.npm.taobao.org

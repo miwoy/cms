@@ -15,17 +15,25 @@ const {
     x
 } = require("lib/common")
 
+/**
+ * 文本转 json
+ */
 function convertT2J(text) {
     return text.split("\n").reduce((acc, cur) => {
         if (cur[0] && cur[0] !== "#")
             acc[cur.split("=")[0]] = cur.split("=").slice(1).join("=")
+        else if (cur[0] && cur[0] == "#")
+            acc[cur] = ""
         return acc
     }, {})
 }
 
+/**
+ * json 转文本
+ */
 function convertJ2T(json) {
     return _.keys(json).map(key => {
-        return key + "=" + json[key]
+        return key[0] == "#" ? key : key + "=" + json[key]
     }).join("\n")
 }
 
@@ -66,13 +74,13 @@ async function deployGroup(task, file) {
 
         let env1 = fs.existsSync(path.join(filepath, ".env")) && fs.readFileSync(path.join(filepath, ".env")).toString()
         env1 = env1 || ""
-        
+
         await execAsyncAndLog(pushLog, `openssl des3 -d -md sha256 -k ${conf.secret}${file.name} -in ${file.path} | tar xzf - -C ${workDir}`, {}, function (childProcess) {
             childProcess.stdout.on('data', (data) => {
                 pushLog(`${data}`);
             });
         })
-        
+
         let env2 = fs.readFileSync(path.join(filepath, ".env")).toString()
         let env = _.assign(convertT2J(env1), convertT2J(env2))
         env = convertJ2T(env)

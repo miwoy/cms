@@ -10,3 +10,6 @@ Dockerfile
 .nyc_output/
 deploy/
 .git/
+src/downloads
+src/store
+src/uploads

@@ -65,58 +65,75 @@ async function buildGroup(task, site, env, services) {
 
         // 释放配置文件
         let etcd = {
-            ".env": site.env + "\n",
-            "before_post.sh": `
-. ./.env
-error_exit() {
-    echo "$1" 1>&2
-    exit 1
-}
-            `,
-            "after_post.sh": `
-. ./.env
-error_exit() {
-    echo "$1" 1>&2
-    exit 1
-}
-            `,
-            "install.sh": `
-#!/bin/bash
-
-. ./.env
-
-error_exit() {
-    echo "$1" 1>&2
-    exit 1
-}
-
-
-echo "销毁历史容器"
-docker-compose down 2>&1
-
-echo "启动新容器"
-docker-compose up -d || error_exit "启动容器失败"
-
-echo "清理空镜像"
-docker image prune -f > /dev/null 2>&1
-
-echo "完成"
-exit 0
-            `,
+            ".env": "\n",
+            "before_post.sh": "\n" +
+                ". ./.env\n" +
+                "error_exit() {\n" +
+                "    echo \"$1\" 1>&2\n" +
+                "    exit 1\n" +
+                "}\n",
+            "after_post.sh": "\n" +
+                ". ./.env\n" +
+                "error_exit() {\n" +
+                "    echo \"$1\" 1>&2\n" +
+                "    exit 1\n" +
+                "}\n",
+            "install.sh": "\n" +
+                "#!/bin/bash\n" +
+                "\n" +
+                ". ./.env\n" +
+                "\n" +
+                "error_exit() {\n" +
+                "    echo \"$1\" 1>&2\n" +
+                "    exit 1\n" +
+                "}\n" +
+                "\n" +
+                "\n" +
+                "echo \"销毁历史容器\"\n" +
+                "docker-compose down 2>&1\n" +
+                "\n" +
+                "echo \"启动新容器\"\n" +
+                "docker-compose up -d || error_exit \"启动容器失败\"\n" +
+                "\n" +
+                "echo \"清理空镜像\"\n" +
+                "docker image prune -f > /dev/null 2>&1\n" +
+                "\n" +
+                "echo \"完成\"\n" +
+                "exit 0\n",
             "docker-compose.yml": site.dockerCompose
         }
 
+        // 注入本地导出的服务信息 环境变量
+        for (let service of services) {
+
+            etcd[".env"] += `\n# ${service.name}\n`
+            etcd[".env"] += `${service.name}_version=${service.version}\n`
+            etcd[".env"] += `${service.name}_image=${service.image}\n`
+            etcd[".env"] += `${service.name}_container_name=${site.name}-${env.name}-${service.name}\n`
+            etcd[".env"] += `${service.name}_port=${(service.etcd.port?service.etcd.port+":" : "") + service.defaultPort}\n`
+            etcd[".env"] += (service.appconf || "") + "\n" + service.etcd["env"] + "\n"
+
+        }
+
+        // 注入环境与站点 环境变量。SITE与appid等价，为了兼容
+        etcd[".env"] += `env=${env.name}\n`
+        etcd[".env"] += `SITE=${site.name}\n`
+        etcd[".env"] += `appid=${site.name}\n`
+
+        // 附加站点级别环境变量配置
+        etcd[".env"] += site.env + "\n"
+
         await pushLog("开始构建批量部署包内项目部署文件")
-        await x.each(services, async (service, i) => {
+        await x.eachSync(services, async (service, i) => {
             let imageName = `./${service.name}@${service.version}.tar.gz` // 镜像文件
-            etcd["before_post.sh"] += `
-echo "加载镜像「${imageName}」"
-docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n
-            `
+            etcd["before_post.sh"] += "\n" +
+                `echo "加载镜像「${imageName}」"\n` +
+                `docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n`
+
             etcd["before_post.sh"] += (service.beforePost || "") + "\n" + (service.etcd["beforePost"] || "") + "\n"
             etcd["after_post.sh"] += (service.afterPost || "") + "\n" + (service.etcd["afterPost"] || "") + "\n"
             if (service.type == "REPO") {
-                await execAsyncAndLog(pushLog, `${service.auth && service.auth.username && service.auth.password?`docker login -u ${service.auth.username} -p ${service.auth.password} chaozhou-docker.pkg.coding.net &&`:""} docker pull ${service.image}:${service.version}`, {
+                await execAsyncAndLog(pushLog, `${service.auth && service.auth.username && service.auth.password?`docker logout && docker login -u ${service.auth.username} -p ${service.auth.password} chaozhou-docker.pkg.coding.net &&`:""} docker pull ${service.image}:${service.version}`, {
                     cwd: imageDirPath
                 }, function (childProcess) {
                     childProcess.stdout.on('data', (data) => {
@@ -142,32 +159,20 @@ docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文
             }
         })
 
-        for (let service of services) {
-            
-            etcd[".env"] += `\n# ${service.name}\n`
-            etcd[".env"] += `${service.name}_version=${service.version}\n`
-            etcd[".env"] += `${service.name}_image=${service.image}\n`
-            etcd[".env"] += `${service.name}_container_name=${site.name}-${env.name}-${service.name}\n`
-            etcd[".env"] += `${service.name}_port=${(service.etcd.port?service.etcd.port+":" : "") + service.defaultPort}\n`
-            etcd[".env"] += (service.appconf || "") + "\n" + service.etcd["env"] + "\n"
-           
-        }
-
-        etcd[".env"] += `env=${env.name}\n`
-        etcd[".env"] += `SITE=${site.name}\n`
-        etcd[".env"] += `appid=${site.name}\n`
-
         fs.writeFileSync(path.join(filepath, "install.sh"), etcd["install.sh"])
         fs.writeFileSync(path.join(filepath, "docker-compose.yml"), etcd["docker-compose.yml"])
         fs.writeFileSync(path.join(filepath, ".env"), etcd[".env"])
         fs.writeFileSync(path.join(filepath, "after_post.sh"), etcd["after_post.sh"])
         fs.writeFileSync(path.join(filepath, "before_post.sh"), etcd["before_post.sh"])
+
+        // 部署包内容说明配置
         fs.writeFileSync(path.join(filepath, "config.json"), JSON.stringify({
             services: task.services,
             site: site,
             env: env,
             hash: task.hash
         }))
+
         await execAsyncAndLog(pushLog, `cp -aR ./etcd ${filepath}/`)
         await execAsyncAndLog(pushLog, `tar -zcf - ${dirname} | openssl des3 -md sha256 -salt -k ${conf.secret}${filename} -out ${downloadDir}/${filename}`, {
             cwd: workDir

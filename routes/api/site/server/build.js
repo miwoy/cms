@@ -224,18 +224,6 @@ router.post("/", async (ctx) => {
                     _id: {
                         $in: siteEnv.serviceIds.map(id=>objectId(id))
                     }
-                }, {
-                    fields: {
-                        "_id": 1,
-                        "name": 1,
-                        "code": 1,
-                        "category": 1,
-                        "type": 1,
-                        "image": 1,
-                        "imageUrl": 1,
-                        "auth": 1
-                    }
-
                 }).toArray()
             })
             services = services.concat(_services)
