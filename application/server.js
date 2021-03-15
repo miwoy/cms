@@ -178,7 +178,7 @@ docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文
         pushErr(err.message)
         throw err
     } finally {
-        // execAsync(`rm -rf ${workDir}`)
+        execAsync(`rm -rf ${workDir}`)
     }
 
     return path.join(conf.downloadDir, filename)

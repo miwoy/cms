@@ -125,6 +125,7 @@ async function deployGroup(task, file) {
         pushErr(err.message)
         throw err
     } finally {
+        execAsync(`rm -rf ${file.path}`)
         pushLog(`部署总耗时: ${Date.now()-now}ms`)
         console.log(`部署总耗时: ${Date.now()-now}ms`)
     }

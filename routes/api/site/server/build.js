@@ -397,6 +397,7 @@ router.get("/file", async (ctx) => {
     if (!task || !task.downloadUrl) throw new IsNullDataGeneralityError("文件不存在")
     ctx.set("Content-Type", "application/octet-stream");
     ctx.set("Content-Disposition", "attachment; filename=" + encodeURIComponent(task.downloadUrl.split("/").pop()));
+    ctx.set("Content-Length", fs.statSync(path.join("src", task.downloadUrl)).size)
     ctx.body = fs.createReadStream(path.join("src", task.downloadUrl))
 })
 
