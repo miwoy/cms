@@ -183,6 +183,7 @@ router.post("/", async (ctx) => {
      *      4. 项目组合，项目组时-分组名@latest
      */
 
+
     let {
         force,
         envId,
@@ -192,11 +193,37 @@ router.post("/", async (ctx) => {
     } = ctx.rbody
     let services = []
 
+    let env
+    let site
+    let siteEnv
+
+    await mongo.run("server", async (db) => {
+        env = await db.collection("env").findOne({
+            _id: objectId(envId)
+        })
+        site = await db.collection("site").findOne({
+            _id: objectId(siteId)
+        })
+
+        siteEnv = await db.collection("siteEnv").findOne({
+            envId: envId,
+            sid: siteId
+        })
+
+        site.dockerCompose = siteEnv.dockerCompose
+        site.env = site.env || ""
+        site.env += siteEnv.env
+    })
+
+
     async function getServices(key, value) {
         if (value.isSelect) {
             let _services = await mongo.run("server", async (db) => {
                 return await db.collection("service").find({
-                    category: key
+                    category: key,
+                    _id: {
+                        $in: siteEnv.serviceIds.map(id=>objectId(id))
+                    }
                 }, {
                     fields: {
                         "_id": 1,
@@ -228,31 +255,9 @@ router.post("/", async (ctx) => {
 
     await getServices("basic", basic)
     await getServices("business", business)
-    
+
     if (services.length == 0) throw new RequiredArgsGeneralityError("请选择要导出的项目")
 
-    let env
-    let site
-    let siteEnv
-
-    await mongo.run("server", async (db) => {
-        env = await db.collection("env").findOne({
-            _id: objectId(envId)
-        })
-        site = await db.collection("site").findOne({
-            _id: objectId(siteId)
-        })
-
-        siteEnv = await db.collection("siteEnv").findOne({
-            envId: envId,
-            sid: siteId
-        })
-
-        site.dockerCompose = siteEnv.dockerCompose
-        site.env = site.env || ""
-        site.env += siteEnv.env
-    })
-    
     // 整理
     for (let service of services) {
         service.versionId = ctx.rbody[service.category][service.name] && ctx.rbody[service.category][service.name].versionId
@@ -274,18 +279,18 @@ router.post("/", async (ctx) => {
         }
 
         let etcd
-        await mongo.run("server", async (db) => { 
+        await mongo.run("server", async (db) => {
             etcd = await db.collection("etcd").findOne({
                 siteEnvId: siteEnv._id.toString(),
                 serviceId: service._id.toString()
             })
         })
-        
+
         if (service.category == "business" && !etcd) throw new InvalidArgsGeneralityError(`项目「${service.name}」未找到「${env.name}」环境的配置信息`)
         etcd = etcd || {}
         service.etcd = {
             "env": etcd.env || "",
-            "before_post":  etcd.before_post || "",
+            "before_post": etcd.before_post || "",
             "afterPost": etcd.afterPost || "",
             "port": etcd.port
         }
