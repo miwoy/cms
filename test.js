@@ -1,4 +1,4 @@
-const json = require('./payload.json')
+
 
 require("lib/global")
 const mongo = require("lib/service/mongo")
@@ -12,28 +12,24 @@ const {
 
 let run = async () => {
 
-    let bulkData = json.map(data=>{
-        return {
-            label: data.name,
-            name: data.name,
-            category: "business", 
-            description: data.desc,
-            type: data.type,
-            auth: data.auth,
-            image: data.image
-        }
-    })
-
     await mongo.run("server", async db=> {
-        await db.collection("service").insertMany(bulkData)
-        let services = await db.collection("service").find().toArray()
-        let versions = []
-        
-        services.forEach(service=>{
-            let data = json.find(d=>d.name==service.name)
-            versions = versions.concat(data.versions.map(v=>({name:v,serviceId:service._id.toString()})))
-        })
-        await db.collection("version").insertMany(versions)
+        let versions = await db.collection("version").find().sort({
+            serviceId: 1,
+            name: -1
+        }).toArray()
+        for(let i =0;i<versions.length;i++) {
+            await db.collection("version").updateOne({
+                _id: versions[i]._id
+            }, {
+                "$set": {
+                    name: versions[i].name,
+                    serviceId: versions[i].serviceId,
+                    sequence: i,
+                    createdAt: Date.now() / 1000,
+                    updatedAt: Date.now() / 1000
+                }
+            })
+        }
     })
 
     return "ok"
