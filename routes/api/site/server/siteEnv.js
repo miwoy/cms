@@ -5,6 +5,7 @@ let files = [];
 const basename = path.basename(module.filename);
 const mongo = require("lib/service/mongo")
 const objectId = require('mongodb').ObjectId;
+const YAML = require('yamljs');
 const {
     convertCode2Dot,
     getAmis
@@ -113,7 +114,9 @@ router.post("/", async (ctx) => {
             }
         }).toArray()
 
-        let {insertedId: siteEnvId} = await db.collection("siteEnv").insertOne(data)
+        let {
+            insertedId: siteEnvId
+        } = await db.collection("siteEnv").insertOne(data)
         let docs = services.map(service => {
             return {
                 serviceId: service._id.toString(),
@@ -196,4 +199,55 @@ router.delete("/:id", async (ctx) => {
     ctx.sbody = !!result.result.ok
 })
 
+
+/**
+ * 获取docker-compose模板
+ */
+router.get("/dockerComposeTemplate", async (ctx) => {
+    let template = {
+        version: "2.2",
+        services: {},
+        networks: {
+            default: {
+                external: {
+                    name: "nginx-proxy"
+                }
+            }
+        }
+    }
+    if (ctx.q.serviceIds) {
+        let serviceIds = ctx.q.serviceIds.split(",")
+        let services = await mongo.run("server", async (db) => {
+            return await db.collection("service").find({
+                _id: {
+                    $in: serviceIds.map(id => objectId(id))
+                }
+            }, {
+                fields: {
+                    dockerComposeTemplate: 1,
+                    name: 1
+                }
+            }).toArray()
+        })
+
+        template.services = services.reduce((acc, cur) => {
+            if (cur.dockerComposeTemplate) {
+                acc[cur.name] = YAML.parse(cur.dockerComposeTemplate)
+            }
+            return acc
+        }, {})
+
+    }
+console.log(template)
+    ctx.sbody = {
+        controls: [{
+            "type": "static",
+            "label": "compose 模板",
+            "copyable": {
+                "content": YAML.stringify(template, 4).replace(/\$/g, "\\$")
+            },
+            "tpl": "点击复制"
+        }]
+    }
+})
 module.exports = router

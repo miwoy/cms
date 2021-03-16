@@ -38,7 +38,8 @@
     "qs": "^6.9.4",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
-    "uuid": "^8.1.0"
+    "uuid": "^8.1.0",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "apidoc": "^0.22.0",
