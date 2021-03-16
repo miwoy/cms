@@ -98,7 +98,7 @@ async function deployGroup(task, file) {
 
         pushLog(["待部署的服务:\n" + task.services.map(ser => ser.name + "@" + ser.version).join("\n"), "部署任务开始执行:"])
         // 1. 执行预设脚本
-        await execAsyncAndLog(pushLog, `sh before_post.sh`, {
+        await execAsyncAndLog(pushLog, `/bin/bash before_post.sh`, {
             cwd: filepath
         }, function (childProcess) {
             childProcess.stdout.on('data', (data) => {
@@ -106,7 +106,7 @@ async function deployGroup(task, file) {
             });
         })
         // 2. 启动脚本
-        await execAsyncAndLog(pushLog, `sh install.sh`, {
+        await execAsyncAndLog(pushLog, `/bin/bash install.sh`, {
             cwd: filepath
         }, function (childProcess) {
             childProcess.stdout.on('data', (data) => {
@@ -114,7 +114,7 @@ async function deployGroup(task, file) {
             });
         })
         // 3. 执行后置脚本
-        await execAsyncAndLog(pushLog, `sh after_post.sh`, {
+        await execAsyncAndLog(pushLog, `/bin/bash after_post.sh`, {
             cwd: filepath
         }, function (childProcess) {
             childProcess.stdout.on('data', (data) => {

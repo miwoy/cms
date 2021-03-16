@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const moment = require("moment-timezone")
 const uuid = require("uuid")
+const YAML = require("yamljs")
 const os = require("os")
 const {
     execAsync,
@@ -89,11 +90,8 @@ async function buildGroup(task, site, env, services) {
                 "}\n" +
                 "\n" +
                 "\n" +
-                "echo \"销毁历史容器\"\n" +
-                "docker-compose down 2>&1\n" +
-                "\n" +
-                "echo \"启动新容器\"\n" +
-                "docker-compose up -d || error_exit \"启动容器失败\"\n" +
+                "echo \"重启容器\"\n" +
+                `docker-compose up  -d --force-recreate ${services.map(ser=>dirname + "-" + ser.name).join(" ")} || error_exit \"启动容器失败\"\n` +
                 "\n" +
                 "echo \"清理空镜像\"\n" +
                 "docker image prune -f > /dev/null 2>&1\n" +
@@ -105,14 +103,12 @@ async function buildGroup(task, site, env, services) {
 
         // 注入本地导出的服务信息 环境变量
         for (let service of services) {
-
             etcd[".env"] += `\n# ${service.name}\n`
             etcd[".env"] += `${service.name}_version=${service.version}\n`
             etcd[".env"] += `${service.name}_image=${service.image}\n`
             etcd[".env"] += `${service.name}_container_name=${site.name}-${env.name}-${service.name}\n`
             etcd[".env"] += `${service.name}_port=${(service.etcd.port?service.etcd.port+":" : "") + service.defaultPort}\n`
             etcd[".env"] += (service.appconf || "") + "\n" + service.etcd["env"] + "\n"
-
         }
 
         // 注入环境与站点 环境变量。SITE与appid等价，为了兼容
@@ -158,6 +154,14 @@ async function buildGroup(task, site, env, services) {
                 })
             }
         })
+
+        let compose = YAML.parse(etcd["docker-compose.yml"])
+        _.keys(compose.services).map(key => {
+            compose.services[dirname + "-" + key] = compose.services[key]
+            delete compose.services[key]
+        })
+
+        etcd["docker-compose.yml"] = YAML.stringify(compose)
 
         fs.writeFileSync(path.join(filepath, "install.sh"), etcd["install.sh"])
         fs.writeFileSync(path.join(filepath, "docker-compose.yml"), etcd["docker-compose.yml"])
