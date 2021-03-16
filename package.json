@@ -11,7 +11,8 @@
     "apidoc": "NODE_PATH=./ npx apidoc -i lib/apiDoc/ -i routes/  -o src/docs",
     "seeder": "NODE_PATH=./ DEBUG=deployment:* node ./seeder",
     "sp": "NODE_PATH=./ DEBUG=deployment:* node ./seeder/property.js",
-    "deploy": "NODE_PATH=./ node lib/scripts/deploy"
+    "deploy": "NODE_PATH=./ node lib/scripts/deploy",
+    "record": "NODE_PATH=./ node lib/scripts/record"
   },
   "dependencies": {
     "debug": "^2.2.0",

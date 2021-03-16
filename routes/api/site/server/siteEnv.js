@@ -204,20 +204,10 @@ router.delete("/:id", async (ctx) => {
  * 获取docker-compose模板
  */
 router.get("/dockerComposeTemplate", async (ctx) => {
-    let template = {
-        version: "2.2",
-        services: {},
-        networks: {
-            default: {
-                external: {
-                    name: "nginx-proxy"
-                }
-            }
-        }
-    }
+    let services
     if (ctx.q.serviceIds) {
         let serviceIds = ctx.q.serviceIds.split(",")
-        let services = await mongo.run("server", async (db) => {
+        services = await mongo.run("server", async (db) => {
             return await db.collection("service").find({
                 _id: {
                     $in: serviceIds.map(id => objectId(id))
@@ -229,22 +219,31 @@ router.get("/dockerComposeTemplate", async (ctx) => {
                 }
             }).toArray()
         })
-
-        template.services = services.reduce((acc, cur) => {
-            if (cur.dockerComposeTemplate) {
-                acc[cur.name] = YAML.parse(cur.dockerComposeTemplate)
+        
+        services = services.map((service) => {
+            if (service.dockerComposeTemplate) {
+                return `  ${service.name}:\n` + service.dockerComposeTemplate.split("\n").map(row=>"    " + row).join("\n")
+            } else {
+                return ""
             }
-            return acc
-        }, {})
+        }).join("\n")
 
     }
-console.log(template)
+
+    let template = `
+version: "2.2"
+services: ${services? "\n"+services : "{}"}
+networks:
+  default:
+    external:
+      name: "nginx-proxy"
+`
     ctx.sbody = {
         controls: [{
             "type": "static",
             "label": "compose 模板",
             "copyable": {
-                "content": YAML.stringify(template, 4).replace(/\$/g, "\\$")
+                "content": template.replace(/\$/g, "\\$")
             },
             "tpl": "点击复制"
         }]

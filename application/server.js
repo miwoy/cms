@@ -154,14 +154,17 @@ async function buildGroup(task, site, env, services) {
                 })
             }
         })
+        let space = 2
+        let isService = false
+        etcd["docker-compose.yml"] = etcd["docker-compose.yml"].split("\n").map(row => {
+            if (row && row.slice(0, space) != "  ") isService = false
+            if (row.trimEnd() == "services:") isService = true
+            if (isService && new RegExp(`^\\s{${space}}\\w+:$`).test(row.trimEnd())) {
+                row = row.replace(/(\w+:)/, dirname + "-$1")
+            }
+            return row
+        }).join("\n")
 
-        let compose = YAML.parse(etcd["docker-compose.yml"])
-        _.keys(compose.services).map(key => {
-            compose.services[dirname + "-" + key] = compose.services[key]
-            delete compose.services[key]
-        })
-
-        etcd["docker-compose.yml"] = YAML.stringify(compose)
 
         fs.writeFileSync(path.join(filepath, "install.sh"), etcd["install.sh"])
         fs.writeFileSync(path.join(filepath, "docker-compose.yml"), etcd["docker-compose.yml"])
