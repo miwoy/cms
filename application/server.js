@@ -136,12 +136,14 @@ async function buildGroup(task, site, env, services) {
         await pushLog("开始构建批量部署包内项目部署文件")
         await x.eachSync(services, async (service, i) => {
             let imageName = `./${service.name}@${service.version}.tar.gz` // 镜像文件
-            etcd["before_post.sh"] += "\n" +
-                `echo "加载镜像「${imageName}」"\n` +
-                `docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n`
 
             etcd["before_post.sh"] += (service.beforePost || "") + "\n" + (service.etcd["beforePost"] || "") + "\n"
             etcd["after_post.sh"] += (service.afterPost || "") + "\n" + (service.etcd["afterPost"] || "") + "\n"
+
+            if (task.onlyEtcd) return
+            etcd["before_post.sh"] += "\n" +
+            `echo "加载镜像「${imageName}」"\n` +
+            `docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n`
             if (service.type == "REPO") {
                 await execAsyncAndLog(pushLog, `${service.auth && service.auth.username && service.auth.password?`docker logout && docker login -u ${service.auth.username} -p ${service.auth.password} chaozhou-docker.pkg.coding.net &&`:""} docker pull ${service.image}:${service.version}`, {
                     cwd: imageDirPath

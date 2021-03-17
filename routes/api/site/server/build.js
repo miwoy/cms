@@ -50,7 +50,6 @@ router.get("/schema", async (ctx, next) => {
 }, async (ctx) => {
     let services = await mongo.run("server", async (db) => {
         if (!ctx.q.siteId) return []
-        console.log()
         let siteEnv = await db.collection("siteEnv").findOne({
             sid: ctx.q.siteId,
             envId: ctx.q.envId
@@ -186,6 +185,7 @@ router.post("/", async (ctx) => {
 
     let {
         force,
+        onlyEtcd,
         envId,
         _siteId: siteId,
         basic,
@@ -335,6 +335,7 @@ router.post("/", async (ctx) => {
         finished: false,
         hash: hash,
         services: services,
+        onlyEtcd,
         log: []
     }
 
