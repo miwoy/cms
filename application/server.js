@@ -64,6 +64,19 @@ async function buildGroup(task, site, env, services) {
             cwd: tmpDir
         })
 
+        let space = 2
+        let isService = false
+        let serviceNames = []
+        site.dockerCompose = site.dockerCompose.split("\n").map(row => {
+            if (row && row.trim()[0] != "#" && row.slice(0, space) != "  ") isService = false
+            if (row.trimEnd() == "services:") isService = true
+            if (isService && new RegExp(`^\\s{${space}}\\w+:$`).test(row.trimEnd())) {
+                row = row.replace(/(\w+:)/, dirname + "-$1")
+                serviceNames.push(row.trim().slice(0,-1))
+            }
+            return row
+        }).join("\n")
+
         // 释放配置文件
         let etcd = {
             ".env": "\n",
@@ -91,7 +104,7 @@ async function buildGroup(task, site, env, services) {
                 "\n" +
                 "\n" +
                 "echo \"重启容器\"\n" +
-                `docker-compose up  -d --force-recreate ${services.map(ser=>dirname + "-" + ser.name).join(" ")} || error_exit \"启动容器失败\"\n` +
+                `docker-compose up  -d --force-recreate ${services.map(ser=>dirname + "-" + ser.name).filter(name=>serviceNames.includes(name)).join(" ")} || error_exit \"启动容器失败\"\n` +
                 "\n" +
                 "echo \"清理空镜像\"\n" +
                 "docker image prune -f > /dev/null 2>&1\n" +
@@ -115,6 +128,7 @@ async function buildGroup(task, site, env, services) {
         etcd[".env"] += `env=${env.name}\n`
         etcd[".env"] += `SITE=${site.name}\n`
         etcd[".env"] += `appid=${site.name}\n`
+        etcd[".env"] += `servicePrefix=${dirname}\n`
 
         // 附加站点级别环境变量配置
         etcd[".env"] += site.env + "\n"
@@ -154,16 +168,6 @@ async function buildGroup(task, site, env, services) {
                 })
             }
         })
-        let space = 2
-        let isService = false
-        etcd["docker-compose.yml"] = etcd["docker-compose.yml"].split("\n").map(row => {
-            if (row && row.slice(0, space) != "  ") isService = false
-            if (row.trimEnd() == "services:") isService = true
-            if (isService && new RegExp(`^\\s{${space}}\\w+:$`).test(row.trimEnd())) {
-                row = row.replace(/(\w+:)/, dirname + "-$1")
-            }
-            return row
-        }).join("\n")
 
 
         fs.writeFileSync(path.join(filepath, "install.sh"), etcd["install.sh"])
