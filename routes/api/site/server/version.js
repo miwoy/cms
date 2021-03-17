@@ -14,21 +14,30 @@ let router = new Router({});
 router.post("/:serviceName", async (ctx) => {
     if (!ctx.params.serviceName) throw new RequiredArgsGeneralityError("服务简称")
     if (!ctx.rbody.version) throw new RequiredArgsGeneralityError("version")
-    let result = await mongo.run("server", async db=> {
-        let service =  await db.collection("service").findOne({
+    let result = await mongo.run("server", async db => {
+        let service = await db.collection("service").findOne({
             name: ctx.params.serviceName
         })
-        if (!service)  throw new RequiredDataGeneralityError("service")
-        let now = Date.now()/1000;
-        return await db.collection("version").insertOne({
-            createdAt:now,
-            updatedAt: now,
-            sequence: -Date.now(),
+
+        if (!service) throw new RequiredDataGeneralityError("service")
+        let versionExists = await db.collection("version").count({
             name: ctx.rbody.version,
             serviceId: service._id.toString()
         })
+
+        if (!versionExists) {
+            let now = Date.now() / 1000;
+            return await db.collection("version").insertOne({
+                createdAt: now,
+                updatedAt: now,
+                sequence: -Date.now(),
+                name: ctx.rbody.version,
+                serviceId: service._id.toString()
+            })
+        }
+
     })
-    ctx.sbody = result.insertedId
+    ctx.sbody = "ok"
 })
 
 module.exports = router
