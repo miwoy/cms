@@ -86,7 +86,7 @@ async function deployGroup(task, file) {
         env = convertJ2T(env)
         fs.writeFileSync(path.join(filepath, ".env"), env)
 
-        let buildTask = require(`${filepath}/config.json`)
+        let buildTask = JSON.parse(fs.readFileSync(`${filepath}/config.json`).toString())
         task = _.assign(task, buildTask)
         await mongo.run("client", async db => {
             await db.collection("task").updateOne({
