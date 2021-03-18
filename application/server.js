@@ -72,7 +72,7 @@ async function buildGroup(task, site, env, services) {
             if (row.trimEnd() == "services:") isService = true
             if (isService && new RegExp(`^\\s{${space}}\\w+:$`).test(row.trimEnd())) {
                 row = row.replace(/(\w+:)/, dirname + "-$1")
-                serviceNames.push(row.trim().slice(0,-1))
+                serviceNames.push(row.trim().slice(0, -1))
             }
             return row
         }).join("\n")
@@ -142,8 +142,8 @@ async function buildGroup(task, site, env, services) {
 
             if (task.onlyEtcd) return
             etcd["before_post.sh"] += "\n" +
-            `echo "加载镜像「${imageName}」"\n` +
-            `docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n`
+                `echo "加载镜像「${imageName}」"\n` +
+                `docker load < ./${path.join("images", imageName)} || error_exit "加载镜像文件失败"\n`
             if (service.type == "REPO") {
                 await execAsyncAndLog(pushLog, `${service.auth && service.auth.username && service.auth.password?`docker logout && docker login -u ${service.auth.username} -p ${service.auth.password} chaozhou-docker.pkg.coding.net &&`:""} docker pull ${service.image}:${service.version}`, {
                     cwd: imageDirPath
@@ -196,7 +196,29 @@ async function buildGroup(task, site, env, services) {
         pushErr(err.message)
         throw err
     } finally {
-        execAsync(`rm -rf ${workDir}`)
+        execAsync(`rm -rf ${workDir}`);
+
+        // 清理历史（三天前）部署包
+        (async () => {
+            let tasks = await mongo.run("server", async db => {
+                return await db.collection("task").find({
+                    createdAt: {
+                        $lte: Date.now() / 1000 - 3 * 24 * 60 * 60
+                    }
+                }, {
+                    fields: {
+                        _id: 1,
+                        downloadUrl: 1
+                    }
+                }).toArray()
+            })
+
+            tasks.map(task => {
+                if (task.downloadUrl && fs.existsSync(path.join("./src", task.downloadUrl))) {
+                    fs.unlinkSync(path.join("./src", task.downloadUrl))
+                }
+            })
+        })()
     }
 
     return path.join(conf.downloadDir, filename)
