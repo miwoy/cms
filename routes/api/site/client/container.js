@@ -17,11 +17,12 @@ let router = new Router()
 
 router.get("/list", async (ctx) => {
 
-    let result = await execAsync(`docker ps -a --format "{{.ID}},{{.Names}},{{.Status}},{{.Image}},{{.Ports}}" ${ctx.q.keywords?" | grep " + ctx.q.keywords:""}`)
+    let result = await execAsync(`docker ps -a --format "{{.ID}},{{.Names}},{{.Status}},{{.Image}},{{.Ports}}"`)
     let data = [
     ]
 
     result = result.trim().split("\n").map(r => r.split(","))
+    result = result.filter(row=>new RegExp(ctx.q.keywords).test(row[1]))
     for (let row of result) {
         row[2] = await execAsync(`docker inspect ${row[0]} --format="{{.State.Status}}"`)
     }
@@ -29,7 +30,10 @@ router.get("/list", async (ctx) => {
     data.map((row,i)=>{
         data[i] = row.reduce((row, col, i)=>{row[i+""]=col;return row;},{})
     })
-    ctx.body = data
+    ctx.body = {
+        items: data,
+        total: 100
+    }
 })
 
 router.get("/:id/restart", async (ctx) => {
@@ -47,22 +51,9 @@ router.get("/:id/stop", async (ctx) => {
     ctx.body = result
 })
 
-router.get("/:id/exportLog", exportFile, async (ctx) => {
-    if (os.platform() != "darwin") {
-        let option = await execAsync(`docker container inspect ${ctx.params.id}`)
-        option = JSON.parse(option)
-        let stream = fs.readFileSync(option[0].LogPath)
-        ctx.sbody = {
-            buffer: stream,
-            filename: `${ctx.params.id}.log`
-        }
-    } else { // 兼容 macOS
-        let log = await execAsync(`docker logs ${ctx.params.id} --since 240h`)
-        ctx.sbody = {
-            buffer: new Buffer(log),
-            filename: `${ctx.params.id}.log`
-        }
-    }
+router.get("/:id/delete", async (ctx) => {
+    let result = await execAsync(`docker rm -f ${ctx.params.id}`)
+    ctx.body = result
 })
 
 let task = {
